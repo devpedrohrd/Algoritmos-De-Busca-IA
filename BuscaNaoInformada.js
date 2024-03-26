@@ -1,147 +1,164 @@
-import { Grafo } from "./Grafo.js";
-
-export class BuscaNaoInformada {
-    constructor() {
-        this.grafo = new Grafo();
-        this.visitados = {};
-        this.fila = [];
-    }
-
-    buscaEmLargura(estadoInicial, estadoFinal) {
-        let fila = [];
-        fila.push(estadoInicial);
-
-        while (fila.length > 0) {
-            let vertice = fila.shift();
-            console.log(`Visitando vertice: ${vertice}`);
-
-            if (vertice == estadoFinal) {
-                console.log('Vertice encontrado!: ', estadoFinal);
-                return;
-            }
-
-            let arestas = this.grafo.mostrarArestas(vertice);
-            for (let aresta in arestas) {
-                if (!this.visitados[aresta]) {
-                    fila.push(aresta);
-                    this.visitados[aresta] = true;
-                }
-            }
-        }
-        return `Vertice não encontrado !`
-    }
-
-    buscaEmProfundidade(estadoInicial, estadoFinal) {
-        let visitados = {};
-        let pilha = [];
-
-        pilha.push(estadoInicial);
-        while (pilha.length > 0) {
-            let vertice = pilha.pop();
-            console.log(`Visitando vertice: ${vertice}`);
-
-            if (vertice == estadoFinal) {
-                console.log('Vertice encontrado!: ', estadoFinal);
-                return;
-            }
-
-            let arestas = this.grafo.mostrarArestas(vertice);
-            for (let aresta in arestas) {
-                if (!visitados[aresta]) {
-                    pilha.push(aresta);
-                    visitados[aresta] = true;
-                }
-            }
+export class BuscaNaoInf {
+    constructor(estadoInicial, estadoFinal) {
+        this.estadoInicial = estadoInicial;
+        this.estadoFinal = estadoFinal;
+        this.mapa = {
+            "Arad": { acoes: { "Zerind": 75, "Timisoara": 118, "Sibiu": 140 } },
+            "Zerind": { acoes: { "Arad": 75, "Oradea": 71 } },
+            "Oradea": { acoes: { "Zerind": 71, "Sibiu": 151 } },
+            "Timisoara": { acoes: { "Arad": 118, "Lugoj": 111 } },
+            "Lugoj": { acoes: { "Timisoara": 111, "Mehadia": 70 } },
+            "Mehadia": { acoes: { "Lugoj": 70, "Drobeta": 75 } },
+            "Drobeta": { acoes: { "Mehadia": 75, "Craiova": 120 } },
+            "Craiova": { acoes: { "Drobeta": 120, "Rimnicu Vilcea": 146, "Pitesti": 138 } },
+            "Rimnicu Vilcea": { acoes: { "Craiova": 146, "Pitesti": 97, "Sibiu": 80 } },
+            "Sibiu": { acoes: { "Arad": 140, "Oradea": 151, "Rimnicu Vilcea": 80, "Fagaras": 99 } },
+            "Fagaras": { acoes: { "Sibiu": 99, "Bucharest": 211 } },
+            "Pitesti": { acoes: { "Rimnicu Vilcea": 97, "Craiova": 138, "Bucharest": 101 } },
+            "Bucharest": { acoes: { "Fagaras": 211, "Pitesti": 101 } },
+            "Giurgiu": { acoes: { "Bucharest": 90 } },
+            "Urziceni": { acoes: { "Bucharest": 85, "Hirsova": 98, "Vaslui": 142 } },
+            "Hirsova": { acoes: { "Urziceni": 98, "Eforie": 86 } },
+            "Eforie": { acoes: { "Hirsova": 86 } },
+            "Vaslui": { acoes: { "Urziceni": 142, "Iasi": 92 } },
+            "Iasi": { acoes: { "Vaslui": 92, "Neamt": 87 } },
+            "Neamt": { acoes: { "Iasi": 87 } }
         }
     }
 
-    buscaEmProfundidadeLimitada(estadoInicial, estadoFinal, limite) {
-        let visitados = {};
-        let pilha = [];
-        let profundidade = {};
+    acoes(estado) {
+        return this.mapa[estado].acoes;
+    }
 
-        pilha.push(estadoInicial);
-        profundidade[estadoInicial] = 0;
-        while (pilha.length > 0) {
-            let vertice = pilha.pop();
-            console.log(`Visitando vertice: ${vertice}`);
+    transicao(estado, acao) { // este metodo serve para retornar o estado resultante de uma ação
+        if (this.acoes(estado)[acao]) {
+            return acao;
+        }
+    }
 
-            if (vertice == estadoFinal) {
-                console.log('Vertice encontrado!: ', estadoFinal);
+    custo(estado, acao) {
+        return this.acoes(estado)[acao];
+    }
+
+    objetivo(estado) {
+        return estado == this.estadoFinal;
+    }
+
+    buscaEmLargura() {
+        let borda = [{ estado: this.estadoInicial, custo: 0 }];
+        let explorado = new Set(); // Set serve para armazenar valores únicos
+        let custoTotal = 0;
+
+        while (borda.length > 0) {
+            let { estado, custo } = borda.shift();
+            custoTotal = custo;
+            if (this.objetivo(estado)) {
+                console.log("Caminho: " + [...explorado, estado].join(" -> "));
+                console.log("Objetivo encontrado:", estado);
+                console.log("Custo: " + custoTotal);
+                return;
+            }
+            explorado.add(estado);
+            for (let acao in this.acoes(estado)) {
+                let estadoResultado = this.transicao(estado, acao);
+                if (!explorado.has(estadoResultado) && !borda.some(item => item.estado === estadoResultado)) { // some() verifica se algum item do array satisfaz a condição
+                    borda.push({ estado: estadoResultado, custo: custo + this.custo(estado, acao) });
+                }
+            }
+        }
+    }
+
+    buscaEmProfundidade() {
+        let borda = [this.estadoInicial];
+        let explorado = [];
+
+        while (borda.length > 0) {
+            let estado = borda.pop();
+            if (this.objetivo(estado)) {
+                console.log("Caminho: " + explorado.join(" -> "));
+                console.log("Objetivo encontrado:", estado);
                 return true;
             }
+            explorado.push(estado);
+            for (let acao in this.acoes(estado)) {
+                let estadoResultado = this.transicao(estado, acao);
+                if (!explorado.includes(estadoResultado) && !borda.includes(estadoResultado)) {
+                    borda.push(estadoResultado);
+                }
+            }
+        }
+        console.log("Objetivo não encontrado!");
+        return false;
+    }
 
-            if (profundidade[vertice] < limite) {
-                let arestas = this.grafo.mostrarArestas(vertice);
-                for (let aresta in arestas) {
-                    if (!visitados[aresta]) {
-                        pilha.push(aresta);
-                        visitados[aresta] = true;
-                        profundidade[aresta] = profundidade[vertice] + 1;
+    buscaEmProfundidadeLimitada(limite) {
+        let borda = [this.estadoInicial];
+        let explorado = [];
+
+        while (borda.length > 0) {
+            let estado = borda.pop();
+            if (this.objetivo(estado)) {
+                console.log("Caminho: " + explorado.join(" -> "));
+                console.log("Objetivo encontrado:", estado);
+                return true;
+            }
+            if (explorado.length < limite) {
+                explorado.push(estado);
+                for (let acao in this.acoes(estado)) {
+                    let estadoResultado = this.transicao(estado, acao);
+                    if (!explorado.includes(estadoResultado) && !borda.includes(estadoResultado)) {
+                        borda.push(estadoResultado);
                     }
                 }
             }
         }
+        console.log("Objetivo não encontrado neste limite!");
         return false;
     }
 
-    buscaEmProfundidadeIterativa(estadoInicial, estadoFinal) {
+    buscaEmProfundidadeIterativa() {
         let limite = 0;
-        while (true) {
-            console.log('Buscando com limite: ', limite);
-            if (this.buscaEmProfundidadeLimitada(estadoInicial, estadoFinal, limite)) {
+        let objetivo = false;
+        while (!objetivo) {
+            console.log(`Buscando com limite: ${limite}`);
+            objetivo = this.buscaEmProfundidadeLimitada(limite);
+            limite++;
+
+            if (limite > Object.keys(this.mapa).length) { // Se o limite for maior que o número de cidades, então não há solução
+                console.log("Objetivo não encontrado!");
                 break;
             }
-            limite++;
         }
     }
 
-    buscaComCustoUniforme(estadoInicial, estadoFinal) {
-        let fila = [];
-        fila.push({ vertice: estadoInicial, custo: 0 });
+    buscaEmCustoUniforme() {
+        let borda = [{ estado: this.estadoInicial, custo: 0 }];
+        let explorado = new Set();
+        let custos = { [this.estadoInicial]: 0 }; // Mantém o custo atual para cada estado
 
-        while (fila.length > 0) {
-            let vertice = fila.shift();
-            console.log(`Visitando vertice: ${vertice.vertice} com custo: ${vertice.custo}`);
-
-            if (vertice.vertice == estadoFinal) {
-                console.log('Vertice encontrado!: ', estadoFinal);
+        while (borda.length > 0) {
+            borda.sort((a, b) => a.custo - b.custo);
+            let { estado, custo } = borda.shift();
+            if (this.objetivo(estado)) {
+                console.log("Caminho: " + [...explorado, estado].join(" -> "));
+                console.log("Objetivo encontrado:", estado);
+                console.log("Custo: " + custo);
                 return;
             }
-
-            let arestas = this.grafo.vertices[vertice.vertice];
-            for (let aresta in arestas) {
-                fila.push({ vertice: aresta, custo: vertice.custo + arestas[aresta] });
+            explorado.add(estado);
+            for (let acao in this.acoes(estado)) {
+                let estadoResultado = this.transicao(estado, acao);
+                let novoCusto = custo + this.custo(estado, acao);
+                if (!explorado.has(estadoResultado) &&
+                    (!custos.hasOwnProperty(estadoResultado) || novoCusto < custos[estadoResultado])) {
+                    borda.push({ estado: estadoResultado, custo: novoCusto });
+                    custos[estadoResultado] = novoCusto;
+                }
             }
-            fila.sort((a, b) => a.custo - b.custo);
         }
     }
+
 }
 
-const busca = new BuscaNaoInformada();
-
-busca.grafo.adicionarVetices('A');
-busca.grafo.adicionarVetices('B');
-busca.grafo.adicionarVetices('C');
-busca.grafo.adicionarVetices('D');
-busca.grafo.adicionarVetices('E');
-busca.grafo.adicionarVetices('F');
-busca.grafo.adicionarVetices('G');
-busca.grafo.adicionarVetices('H');
-busca.grafo.adicionarVetices('I');
-busca.grafo.adicionarVetices('K');
-
-busca.grafo.adicionarAresta('A', 'B', 1);
-busca.grafo.adicionarAresta('A', 'C', 2);
-busca.grafo.adicionarAresta('A', 'D', 5);
-busca.grafo.adicionarAresta('B', 'E', 22);
-busca.grafo.adicionarAresta('C', 'F', 7);
-busca.grafo.adicionarAresta('C', 'G', 4);
-busca.grafo.adicionarAresta('D', 'H', 3);
-busca.grafo.adicionarAresta('D', 'I', 5);
-busca.grafo.adicionarAresta('F', 'K', 1);
-
-console.log(`Busca em profundidade iterativa: `);
-busca.buscaEmProfundidadeIterativa('A', 'I');
-
-// console.log(busca.grafo.estadoInicial);
+let busca = new BuscaNaoInf("Arad", "Bucharest");
+busca.buscaEmLargura();
