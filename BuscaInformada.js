@@ -1,4 +1,4 @@
-class BuscaInformada {
+export class BuscaInformada {
     constructor(estadoInicial, estadoFinal) {
         this.estadoInicial = estadoInicial;
         this.estadoFinal = estadoFinal;
@@ -63,53 +63,105 @@ class BuscaInformada {
             caminho.unshift(no.estado); // Adiciona o estado no início do array
             no = no.pai;
         }
-        return caminho; 
+        return caminho;
     }
 
     buscaGulosa() {
         let borda = [];
         let explorado = new Set(); // Set serve para armazenar valores únicos
-        let caminho = []; 
+        let caminho = [];
         let custo = 0;
-        let no = {estado: this.estadoInicial, custo: 0, heuristica: this.heuristica(this.estadoInicial)};
-        borda.push(no); 
-        
+        let no = { estado: this.estadoInicial, custo: 0, heuristica: this.heuristica(this.estadoInicial) };
+        borda.push(no);
+
         while (borda.length > 0) {
-            let noAtual = borda.shift(); 
-            
-            if (this.objetivo(noAtual.estado)) { 
-                caminho = this.reconstruirCaminho(noAtual); 
-                custo = noAtual.custo; 
-                break; 
+            let noAtual = borda.shift();
+
+            if (this.objetivo(noAtual.estado)) {
+                caminho = this.reconstruirCaminho(noAtual);
+                custo = noAtual.custo;
+                break;
             }
-            
-            explorado.add(noAtual.estado); 
-            let acoes = this.acoes(noAtual.estado); 
-            
+
+            explorado.add(noAtual.estado);
+            let acoes = this.acoes(noAtual.estado);
+
             for (let acao in acoes) { // Percore as ações possíveis do estado atual
                 let novoEstado = acao;
                 let custoAcao = this.custo(noAtual.estado, acao);
-                let novoNo = { 
+                let novoNo = {
                     estado: novoEstado,
-                    pai: noAtual, 
-                    custo: noAtual.custo + custoAcao, 
-                    heuristica: this.heuristica(novoEstado) 
+                    pai: noAtual,
+                    custo: noAtual.custo + custoAcao,
+                    heuristica: this.heuristica(novoEstado)
                 };
-                
+
                 if (!explorado.has(novoEstado) && !this.jaNaBorda(borda, novoEstado)) {
-                    borda.push(novoNo); 
+                    borda.push(novoNo);
                 }
             }
-            
+
             borda.sort((a, b) => a.heuristica - b.heuristica); // Ordena a borda pela heurística,pois é uma busca gulosa
         }
-        
-        console.log('Caminho:', caminho.join(' -> ')); 
-        console.log('Custo:', custo); 
+
+        console.log('Caminho:', caminho.join(' -> '));
+        console.log('Custo:', custo);
+    }
+
+    buscaAEstrela() {
+        let borda = [];
+        let explorado = new Set();
+        let caminho = [];
+        let custo = 0;
+        let no = { estado: this.estadoInicial, custo: 0, heuristica: this.heuristica(this.estadoInicial) };
+        borda.push(no);
+    
+        while (borda.length > 0) {
+            borda.sort((a, b) => (a.custo + a.heuristica) - (b.custo + b.heuristica)); // Ordena a borda pela soma do custo e da heurística
+            let noAtual = borda.shift();
+    
+            if (this.objetivo(noAtual.estado)) {
+                caminho = this.reconstruirCaminho(noAtual);
+                custo = noAtual.custo;
+                break;
+            }
+    
+            explorado.add(noAtual.estado);
+            let acoes = this.acoes(noAtual.estado);
+    
+            for (let acao in acoes) {
+                let novoEstado = acao;
+                let custoAcao = this.custo(noAtual.estado, acao);
+                let custoTotal = noAtual.custo + custoAcao;
+                let novoNo = {
+                    estado: novoEstado,
+                    pai: noAtual,
+                    custo: custoTotal,
+                    heuristica: this.heuristica(novoEstado)
+                };
+    
+                if (!explorado.has(novoEstado)) {
+                    let naBorda = false;
+                    for (let i = 0; i < borda.length; i++) {
+                        if (borda[i].estado === novoEstado && borda[i].custo > custoTotal) {
+                            borda[i] = novoNo;
+                            naBorda = true;
+                            break;
+                        }
+                    }
+                    if (!naBorda) {
+                        borda.push(novoNo);
+                    }
+                }
+            }
+        }
+    
+        console.log('Caminho:', caminho.join(' -> '));
+        console.log('Custo:', custo);
     }
     
 }
 
 const busca = new BuscaInformada('Arad', 'Bucharest');
 
-busca.buscaGulosa()
+busca.buscaAEstrela()
