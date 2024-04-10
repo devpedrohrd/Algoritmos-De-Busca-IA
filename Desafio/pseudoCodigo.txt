@@ -1,0 +1,30 @@
+função distanciaEdição(a, b):
+    tamanhoA = comprimento(a)
+    tamanhoB = comprimento(b)
+    operações = 0
+    índiceA = 0
+    índiceB = 0
+
+    enquanto índiceA < tamanhoA e índiceB < tamanhoB:
+        se a[índiceA] ≠ b[índiceB]:
+            operações = operações + 1
+            se índiceA + 1 < tamanhoA e a[índiceA + 1] == b[índiceB]:
+                índiceA = índiceA + 1
+            senão se índiceB + 1 < tamanhoB e a[índiceA] == b[índiceB + 1]:
+                índiceB = índiceB + 1
+            senão:
+                índiceA = índiceA + 1
+                índiceB = índiceB + 1
+        senão:
+            índiceA = índiceA + 1
+            índiceB = índiceB + 1
+
+    enquanto índiceA < tamanhoA:
+        operações = operações + 1
+        índiceA = índiceA + 1
+
+    enquanto índiceB < tamanhoB:
+        operações = operações + 1
+        índiceB = índiceB + 1
+
+    retornar operações

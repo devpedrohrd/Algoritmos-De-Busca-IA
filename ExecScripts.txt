@@ -1,0 +1,7 @@
+Para executar os scripts use os seguintes comandos:
+
+Executar o script de buscas informadas : node run buscaInfo
+
+Executar o script de buscas não informadas : node run buscaNaoInfo
+
+Executar o script do desafio : node run desafio
